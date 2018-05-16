@@ -1,0 +1,17 @@
+{
+	"name": "json-server",
+	"version": "1.0.0",
+	"description": "",
+	"main": "index.js",
+	"scripts": {
+		"server": "cd server && json-server db.json -w -p 3000",
+		"dev": "roadhog server"
+	},
+	"author": "",
+	"license": "ISC",
+	"dependencies": {
+		"react": "^15.0.0",
+		"react-dom": "^15.0.0",
+		"react-router": "^2.0.0"
+	}
+}
