@@ -9,6 +9,7 @@ class AutoComplete extends React.Component {
     super(props);
 
     this.state = {
+      show: false, // 新增的下拉框显示控制开关
       displayValue: '',
       activeItemIndex: -1
     };
@@ -106,11 +107,13 @@ class AutoComplete extends React.Component {
       activeItemIndex: -1,
       displayValue: ''
     });
-    this.props.onValueChange(value);
+    // 原来的onValueChange改为了onChange以适配antd的getFieldDecorator
+    this.props.onChange(value);
   }
 
   render() {
     const {
+      show,
       displayValue,
       activeItemIndex
     } = this.state;
@@ -120,12 +123,14 @@ class AutoComplete extends React.Component {
     } = this.props;
     return (
       <div className={style.wrapper}>
-        <input
+        <Input
           value={displayValue || value}
           onChange={e => this.handleChange(e.target.value)}
           onKeyDown={this.handleKeyDown}
+          onFocus={() => this.setState({show: true})}
+          onBlur={() => this.setState({show: false})}
         />
-        {options.length > 0 && (
+        {show && options.length > 0 && (
           <ul className={style.options} onMouseLeave={this.handleLeave}>
             {
               options.map((item, index) => {
@@ -148,11 +153,12 @@ class AutoComplete extends React.Component {
   }
 }
 
-// 通用组件最好写一下propTypes约束
+// 由于使用了antd的form.getFieldDecorator来包装组件
+// 这里取消了原来props的isRequired约束以防止报错
 AutoComplete.propTypes = {
-  value: React.PropTypes.string.isRequired,
-  options: React.PropTypes.array.isRequired,
-  onValueChange: React.PropTypes.func.isRequired
+  value: React.PropTypes.any,
+  options: React.PropTypes.array,
+  onChange: React.PropTypes.func // 原来的onValueChange改为了onChange以适配antd的getFieldDecorator
 };
 
 export default AutoComplete;

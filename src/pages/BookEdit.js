@@ -1,6 +1,8 @@
 import React from 'react';
-import HomeLayout from '../layouts/HomeLayout';
 import BookEditor from '../components/BookEditor';
+import request, {
+  get
+} from '../utils/request';
 
 class BookEdit extends React.Component {
   constructor(props) {
@@ -14,8 +16,7 @@ class BookEdit extends React.Component {
     console.log(this.context.router);
     //const BookId = this.context.router.params.id;
     const bookId = 10000;
-    fetch('http://localhost:3000/book/' + bookId)
-      .then(res => res.json())
+    get('http://localhost:3000/book/' + bookId)
       .then(res => {
         this.setState({
           book: res
@@ -27,13 +28,9 @@ class BookEdit extends React.Component {
     const {
       book
     } = this.state;
-    return (
-      <HomeLayout title="编辑用户">
-        {
-          book ? <BookEditor editTarget={book}/> : '加载中...'
-        }
-      </HomeLayout>
-    );
+    return ({
+      book ? <BookEditor editTarget={book}/> : '加载中...'
+    });
   }
 }
 

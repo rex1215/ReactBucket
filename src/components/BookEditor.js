@@ -1,7 +1,28 @@
 import React from 'react';
 import formProvider from '../utils/formProvider';
-import FormItem from './FormItem';
 import AutoComplete from './AutoComplete';
+import {
+  Input,
+  InputNumber,
+  Form,
+  Button,
+  message
+} from 'antd';
+import request, {
+  get
+} from '../utils/request';
+
+
+const Option = AutoComplete.Option;
+const FormItem = Form.Item;
+const formLayout = {
+  labelCol: {
+    span: 4
+  },
+  wrapperCol: {
+    span: 16
+  }
+};
 
 class BookEditor extends React.Component {
   constructor(props) {
@@ -12,8 +33,7 @@ class BookEditor extends React.Component {
   }
 
   getRecommendUsers(partialUserId) {
-    fetch('http://localhost:3000/user?id_like=' + partialUserId)
-      .then((res) => res.json())
+    get('http://localhost:3000/user?id_like=' + partialUserId)
       .then((res) => {
         if (res.length === 1 && res[0].id === partialUserId) {
           // 如果结果只有1条且id与输入的id一致，说明输入的id已经完整了，没必要再设置建议列表
@@ -54,54 +74,53 @@ class BookEditor extends React.Component {
     }
   }
 
+  componentDidMount() {
+    // 在componentWillMount里使用form.setFieldsValue无法设置表单的值
+    // 所以在componentDidMount里进行赋值
+    // see: https://github.com/ant-design/ant-design/issues/4802
+    const {
+      editTarget,
+      form
+    } = this.props;
+    if (editTarget) {
+      form.setFieldsValue(editTarget);
+    }
+  }
+
   handleSubmit(e) {
     e.preventDefault();
 
     const {
-      form: {
-        name,
-        price,
-        owner_id
-      },
-      formValid,
+      form,
       editTarget
     } = this.props;
-    if (!formValid) {
-      alert('请填写正确的信息后重试');
-      return;
-    }
 
-    let editType = '添加';
-    let apiUrl = 'http://localhost:3000/book';
-    let method = 'post';
-    if (editTarget) {
-      editType = '编辑';
-      apiUrl += '/' + editTarget.id;
-      method = 'put';
-    }
+    form.validateFields((err, values) => {
+      if (err) {
+        message.warn(err);
+        return;
+      }
 
-    fetch(apiUrl, {
-        method,
-        body: JSON.stringify({
-          name: name.value,
-          price: price.value,
-          owner_id: owner_id.value
-        }),
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      })
-      .then((res) => res.json())
-      .then((res) => {
-        if (res.id) {
-          alert(editType + '用户成功');
-          this.context.router.push('/book/list');
-          return;
-        } else {
-          alert(editType + '失败');
-        }
-      })
-      .catch((err) => console.error(err));
+      let editType = '添加';
+      let apiUrl = 'http://localhost:3000/book';
+      let method = 'post';
+      if (editTarget) {
+        editType = '编辑';
+        apiUrl += '/' + editTarget.id;
+        method = 'put';
+      }
+
+      request(method, apiUrl, values)
+        .then((res) => {
+          if (res.id) {
+            message.success(editType + '书本成功');
+            this.context.router.push('/book/list');
+          } else {
+            message.error(editType + '失败');
+          }
+        })
+        .catch((err) => console.error(err));
+    });
   }
   componentWillMount() {
     const {
@@ -112,44 +131,71 @@ class BookEditor extends React.Component {
       setFormValues(editTarget);
     }
   }
+
   render() {
     const {
       recommendUsers
     } = this.state;
     const {
-      form: {
-        name,
-        price,
-        owner_id
-      },
-      onFormChange
+      form
     } = this.props;
+    const {
+      getFieldDecorator
+    } = form;
     return (
-      <form onSubmit={(e) => this.handleSubmit(e)}>
-        <FormItem label="书名：" valid={name.valid} error={name.error}>
-          <input
-            type="text"
-            value={name.value}
-            onChange={(e) => onFormChange('name', e.target.value)}
-          />
+      <Form onSubmit={this.handleSubmit} style={{width: '400px'}}>
+        <FormItem label="书名：" {...formLayout}>
+          {getFieldDecorator('name', {
+            rules: [
+              {
+                required: true,
+                message: '请输入书名'
+              }
+            ]
+          })(<Input type="text"/>)}
         </FormItem>
-        <FormItem label="价格：" valid={price.valid} error={price.error}>
-          <input
-            type="number"
-            value={price.value || ''}
-            onChange={(e) => onFormChange('price', +e.target.value)}
-          />
+
+        <FormItem label="价格：" {...formLayout}>
+          {getFieldDecorator('price', {
+            rules: [
+              {
+                required: true,
+                message: '请输入价格',
+                type: 'number'
+              },
+              {
+                min: 1,
+                max: 99999,
+                type: 'number',
+                message: '请输入1~99999的数字'
+              }
+            ]
+          })(<InputNumber/>)}
         </FormItem>
-        <FormItem label="所有者：" valid={owner_id.valid} error={owner_id.error}>
-          <AutoComplete
-            value={owner_id.value ? owner_id.value + '' : ''}
-            options={recommendUsers}
-            onValueChange={value => this.handleOwnerIdChange(value)}
-          />
+
+        <FormItem label="所有者：" {...formLayout}>
+          {getFieldDecorator('owner_id', {
+            rules: [
+              {
+                required: true,
+                message: '请输入所有者ID'
+              },
+              {
+                pattern: /^\d*$/,
+                message: '请输入正确的ID'
+              }
+            ]
+          })(
+            <AutoComplete
+              options={recommendUsers}
+              onChange={this.handleOwnerIdChange}
+            />
+          )}
         </FormItem>
-        <br/>
-        <input type="submit" value="提交"/>
-      </form>
+        <FormItem wrapperCol={{span: formLayout.wrapperCol.span, offset: formLayout.labelCol.span}}>
+          <Button type="primary" htmlType="submit">提交</Button>
+        </FormItem>
+      </Form>
     );
   }
 }
@@ -160,37 +206,6 @@ BookEditor.contextTypes = {
   router: React.PropTypes.object.isRequired
 };
 
-BookEditor = formProvider({
-  name: {
-    defaultValue: '',
-    rules: [{
-      pattern: function(value) {
-        return value.length > 0;
-      },
-      error: '请输入书名'
-    }, {
-      pattern: /^.{1,100}$/,
-      error: '书名最多100个字符'
-    }]
-  },
-  price: {
-    defaultValue: 0,
-    rules: [{
-      pattern: function(value) {
-        return value >= 1 && value <= 100;
-      },
-      error: '请输入1~100的价格'
-    }]
-  },
-  owner_id: {
-    defaultValue: '',
-    rules: [{
-      pattern: function(value) {
-        return !!value;
-      },
-      error: '请选择用户ID'
-    }]
-  }
-})(BookEditor);
+BookEditor = Form.create()(BookEditor);
 
 export default BookEditor;

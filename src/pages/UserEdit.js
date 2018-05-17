@@ -1,6 +1,8 @@
 import React from 'react';
-import HomeLayout from '../layouts/HomeLayout';
 import UserEditor from '../components/UserEditor';
+import request, {
+  get
+} from '../utils/request';
 
 class UserEdit extends React.Component {
   constructor(props) {
@@ -14,8 +16,7 @@ class UserEdit extends React.Component {
     console.log(this.context.router);
     //const userId = this.context.router.params.id;
     const userId = 10000;
-    fetch('http://localhost:3000/user/' + userId)
-      .then(res => res.json())
+    get('http://localhost:3000/user/' + userId)
       .then(res => {
         this.setState({
           user: res
@@ -27,13 +28,9 @@ class UserEdit extends React.Component {
     const {
       user
     } = this.state;
-    return (
-      <HomeLayout title="编辑用户">
-        {
-          user ? <UserEditor editTarget={user}/> : '加载中...'
-        }
-      </HomeLayout>
-    );
+    return ({
+      user ? <UserEditor editTarget={user}/> : '加载中...'
+    });
   }
 }
 

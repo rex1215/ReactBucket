@@ -3,7 +3,7 @@
     {
       "name": "一韬",
       "age": 25,
-      "gender": "female",
+      "gender": "male",
       "id": 10000
     },
     {
@@ -45,10 +45,10 @@
   ],
   "book": [
     {
-      "id": 10000,
       "name": "JavaScript从入门到精通",
-      "price": 9990,
-      "owner_id": 10000
+      "price": 10,
+      "owner_id": 10000,
+      "id": 10000
     },
     {
       "id": 10001,
